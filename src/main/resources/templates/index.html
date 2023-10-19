@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>stock details</title>
+		<style>
+		element{
+                display: flex;
+                flex-direction: column;
+            }
+            body{
+                text-align:center;
+                background-color:rgba(0, 0, 0, 0.541);
+                color:white;
+            }
+            .header{ 
+                padding:3%;
+                background-color:rgb(29, 32, 34);                
+            }            
+            .main-container{
+                padding:1%;
+                height:100%;
+                background-color:rgb(6, 161, 39);
+                color:rgb(24, 21, 21);
+                display:flex;
+                text-align: center;
+                align-items:center;
+                justify-content:space-evenly;
+            }
+            table,th,td{
+                border:2px solid white;
+                background-color:black;
+                color:yellow;
+            } 
+            th,td{
+                padding:9px;
+            } 
+            .center{
+                display:flex;
+                justify-content:center;
+                color: black;
+                background-color:rgb(255, 255, 255);
+            }
+            .update_box{
+                display:flex;
+                background-color: black;
+                color: yellow;
+                align-items:center;
+                padding:2%;
+                width:10%;
+            }
+            .margin{
+                margin: 5%;
+            }
+            label{
+                color:white;
+            }
+            .editStyle{
+                display:flex;
+                flex-direction:column;
+                align-items:center;
+                justify-content:center;
+                border-right:3px dashed blue;
+            }
+		</style>
+	</head>
+	<body>
+        <nav class="header">
+        <input type="button" onclick="mainmenu()" value="Main menu">
+        <input type="button" onclick="showProduct()" value="Show all product">
+        <input type="button" onclick="add()" value="Add new product">
+        <input type="button" onclick="remove()" value="Delete product">
+        <input type="button" onclick="edit()" value="Edit product">
+        </nav>
+        <div><br></div>
+		<div id="App" class="main-container"></div>        
+<script>
+
+let localhost="http://localhost:8080/";
+
+//for get the all data
+
+async function getData(url)
+    {
+        const Data=await fetch(url);
+        let Jdata=await Data.json();
+        return Jdata;
+	}	
+
+//for post a data 
+		
+async function postData(url,obj) 
+    {
+    const response = await fetch(url, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(obj),
+            });
+    let Jdata=await response.json();
+    return Jdata;
+}
+
+//for put the data
+
+async function putData(url,obj) 
+    {
+    const response = await fetch(url, {
+                method: "PUT",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(obj),
+            });
+    let Jdata=await response.json();
+    return Jdata;
+}
+
+//to delete the data
+
+async function deleteData(url) 
+    {
+    const response = await fetch(url, {
+                method: "DELETE",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(),
+            });
+    let Jdata=await response.json();
+    return Jdata;
+}
+
+async function showProduct(){
+    console.clear();
+    let txt="<br><div class='center'><table><tr><th>S.NO</th><th>PRODUCT ID</th><th>PRODUCT NAME</th><th>PRODUCT AMOUNT</th><th>PRODUCT QUANTITY</th></tr>";
+    let sno=1;
+    let data =await getData(localhost+"get");
+    for(a of data){
+        txt+="<tr><td><b>"+sno+"</b></td><td><b>"+a.id+"</b></td><td><b>"+a.name+"</b></td><td><b>"+a.amount+" ₹</b></td><td><b>"+a.quantity+"</b></td></tr>";
+        sno++;
+        }
+    txt+="</table></div><br>";
+    document.getElementById('App').innerHTML=txt;
+}
+
+async function save(){
+        var productName=document.getElementById('name').value;
+        document.getElementById('name').value="";
+        var productQuantity=document.getElementById('quantity').value;
+        document.getElementById('quantity').value="";
+        var productAmount=document.getElementById('amount').value;
+        document.getElementById('amount').value="";
+        if(productName && productQuantity && productAmount){
+            let obj={name:productName,quantity:productQuantity,amount:productAmount};   //calling the function
+            let res= await postData(localhost+"save",obj);
+            if(res.name==productName){
+                document.getElementById('result').innerHTML=res.name+" added Success";            
+            }else{
+                document.getElementById('result').innerHTML="";
+            }
+        }else{
+            document.getElementById('result').innerHTML="we can't accept empty value";
+        }
+        console.clear();
+}
+
+function add(){
+    
+    let txt='<br><br><br><b><div class="margin">enter product name : </b><input type="text" id="name" placeholder="enter name" required><br><b>enter product quantity : </b><input type="number" id="quantity" placeholder="enter quantity" required><br><b>enter product amount :<b><input type="number" id="amount" placeholder="enter amount" required><br><br><button type="submit" onclick="save()">add</button><br><br><br><b id="result"></b></div><br><br><br>';
+    document.getElementById('App').innerHTML=txt;
+}
+
+function remove(){
+    let txt='<br><br><br><div class="margin"><input type="number" id="deleteId" placeholder="enter Id" required>  <input onclick="deleteById()" type="button" value="delete"><b id="res"></b></div><br><br><br><br>';
+    document.getElementById('App').innerHTML=txt;
+}
+
+async function deleteById(){
+    let d=document.getElementById('deleteId').value;
+    document.getElementById('deleteId').value="";
+    data =await getData(localhost+"get"); 
+    console.clear();
+    let result=true;
+    for(a of data){
+        if(a.id==d){
+            let res=await deleteData(localhost+"delete/"+d);    //calling the function
+            document.getElementById('res').innerHTML="<br><br>one data is deleted that id = "+res.id;
+            result=false;
+        }
+    }
+    if(result)
+            document.getElementById('res').innerHTML="<br><br>thres is no ID : "+d+" in database";
+}
+
+async function mainmenu(){
+    let txtname='<br><br><b style="background-color:white;padding:5px;">Outgoing Products</b><br><br><br><b><label>product : </label><b><select id="product_name">';
+    let txtnum='</select><b><label> Quantity : </label></b><select id="product_quantity">';
+        for(let i=1;i<101;i++){txtnum+='<option value="'+i+'">'+i+'</option>';}
+    txtnum+='</select><br><br>';
+    let btn='<div><button type="button" onclick="updateProduct()">FINISH</button></div><div><b id="update_quantity"></b></div>';
+    let data =await getData(localhost+"get");       //calling the function
+    console.clear();
+    for(a of data){
+        txtname+='<option value="'+a.name+'">'+a.name+'</option>';}
+        txtname+='</select><br><br>';
+        document.getElementById('App').innerHTML='<div>'+txtname+txtnum+btn+'</div>';
+}
+
+async function updateProduct(){
+    let q=document.getElementById('product_quantity').value;
+    let name=document.getElementById('product_name').value;
+    data =await getData(localhost+"get");
+    console.clear();
+    for(b of data)
+        if(b.name==name)
+        {
+            gooto(b);
+        }
+
+    async function gooto(a)
+    {
+    if(q){
+        let tem=a.quantity;
+        a.quantity=a.quantity-q;
+        if(a.quantity>-1){
+            document.getElementById('update_quantity').innerHTML="<br><br>JAAN store<br>--------<br><br>"+a.name+" : "+q+" : "+q*a.amount+" ₹<br><br>store data updated";
+            let obj={name:a.name,quantity:a.quantity,amount:a.amount};
+            let z=await putData(localhost+"update/"+a.id,obj);
+        }
+        else{
+            document.getElementById('update_quantity').innerHTML="<br>stocks not available<br> only we have "+a.name+ " : "+tem;
+        }
+    }
+    }
+}
+
+async function changeName(){
+            let oldNAME=document.getElementById('product_name').value;
+            let newNAME=document.getElementById('newName').value;
+            document.getElementById('newName').value="";            
+            let data =await getData(localhost+"get");
+            for(a of data){
+                if(a.name==oldNAME){
+                    let obj={name:newNAME,quantity:a.quantity,amount:a.amount};
+                    let z=await putData(localhost+"update/"+a.id,obj);
+                    console.clear();
+                    console.log(a.name+"->"+z.name);
+                }
+            }
+            console.clear();
+            refreshEdit();
+}
+
+function refreshEdit(){
+    edit();
+}
+
+async function edit(){
+    let productN='<select style="margin:2%;" id="product_name">';
+    let productQ='<select style="margin:2%;" id="product_quantity">';
+    let productA='<select style="margin:2%;" id="product_amount">';
+    let product="";
+    let data =await getData(localhost+"get");       //calling the function
+    for(a of data){
+        product+='<option value="'+a.name+'">'+a.name+'</option>';}
+        product+='</select><br><br>';
+    
+    let name='<div class="editStyle"><div style="padding:2%;color:yellow;"><b>Product Name</b></div>'+productN+product+'<div style="padding:5px;"></div><div><lable><b>Name : </b></lable><input type="text" id="newName" required></div><div style="padding:5px;"></div><button onclick="changeName()">Change</button></div>';
+    let quantity='<div class="editStyle"><div style="padding:2%;color:yellow;"><b>Product Quantity</b></div><div style="padding:5px;"></div>'+productQ+product+'<div style="padding:5px;"></div><div><lable><b>Quantity : </b></lable><input type="number" id="newQuantity" required></div><div style="padding:5px;"></div><button onclick="changeQuantity()">Change</button></div>';
+    let amount='<div class="editStyle"><div style="padding:2%;color:yellow;"><b>Product AMOUNT</b></div><div style="padding:5px;"></div>'+productA+product+'<div style="padding:5px;"></div><div><lable><b>AMOUNT : </b></lable><input type="number" id="newAmount" required></div><div style="padding:5px;"></div><button onclick="changeAmount()">Change</button></div>';
+    
+    document.getElementById('App').innerHTML='<div>'+name+'</div>'+'<div>'+quantity+'</div>'+'<div>'+amount+'</div>';
+}
+
+async function changeAmount(){
+            let NAME=document.getElementById('product_amount').value;
+            let newAMOUNT=document.getElementById('newAmount').value;
+            document.getElementById('newAmount').value="";            
+            let data =await getData(localhost+"get");
+            for(a of data){
+                if(a.name==NAME){
+                    let obj={name:a.name,quantity:a.quantity,amount:newAMOUNT};
+                    let z=await putData(localhost+"update/"+a.id,obj);
+                    console.clear();
+                    console.log(a.name+" : "+a.amount+"->"+z.amount);
+                }
+            }
+            refreshEdit();
+}
+
+async function changeQuantity(){
+            let oldQUANTITY=document.getElementById('product_quantity').value;
+            let newQUANTITY=document.getElementById('newQuantity').value;
+            document.getElementById('newQuantity').value="";            
+            let data =await getData(localhost+"get");
+            for(a of data){
+                if(a.name==oldQUANTITY){
+                    let obj={name:a.name,quantity:newQUANTITY,amount:a.amount};
+                    let z=await putData(localhost+"update/"+a.id,obj);
+                    console.clear();
+                    console.log(a.name+" : "+a.quantity+"->"+z.quantity);
+                }
+            }
+            refreshEdit();
+}
+
+mainmenu();
+</script>
+
+</body>
+</html>
